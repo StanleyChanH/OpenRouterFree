@@ -13,6 +13,10 @@
 
 </div>
 
+<div align="center">
+<img src="assets/demo.png" alt="OpenRouterFree Demo" width="720">
+</div>
+
 ---
 
 OpenRouterFree is a lightweight reverse proxy that automatically discovers **all free AI models** from [OpenRouter](https://openrouter.ai) and exposes them through a **fully OpenAI-compatible API**. Just point any OpenAI client at it and start using free models immediately.

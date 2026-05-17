@@ -13,6 +13,10 @@ English · [中文文档](#功能特性)
 
 </div>
 
+<div align="center">
+<img src="assets/demo.png" alt="OpenRouterFree Demo" width="720">
+</div>
+
 ---
 
 OpenRouterFree 是一个轻量级反向代理，自动发现 [OpenRouter](https://openrouter.ai) 上**所有免费 AI 模型**，并通过**完全兼容 OpenAI 的 API** 暴露出来。只需将任何 OpenAI 客户端指向本服务，即可立即使用免费模型。
