@@ -1,0 +1,10 @@
+services:
+  openrouter-free:
+    build: .
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      - PORT=8000
+      - CACHE_TTL=${CACHE_TTL:-600}
+      - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+    restart: unless-stopped
