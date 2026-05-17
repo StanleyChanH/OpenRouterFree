@@ -1,29 +1,59 @@
+<div align="center">
+
 # OpenRouterFree
 
-Lightweight proxy that auto-discovers free AI models from [OpenRouter](https://openrouter.ai) and exposes them through an OpenAI-compatible API.
+**Auto-discover free AI models from OpenRouter. One API, all free models.**
+
+[![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](Dockerfile)
+
+[English](#features) · [中文文档](README_CN.md)
+
+</div>
+
+---
+
+OpenRouterFree is a lightweight reverse proxy that automatically discovers **all free AI models** from [OpenRouter](https://openrouter.ai) and exposes them through a **fully OpenAI-compatible API**. Just point any OpenAI client at it and start using free models immediately.
+
+## Features
+
+- **Auto-discovery** — Fetches all free models from OpenRouter and keeps them cached (refreshed every 10 minutes)
+- **Smart defaults** — Automatically selects the most popular free model (ranked by weekly token usage)
+- **OpenAI-compatible** — Drop-in replacement for any OpenAI client library or tool
+- **Streaming support** — Full SSE streaming support for real-time responses
+- **Model flexibility** — Use auto-selection, random pick, or specify a particular model
+- **Zero storage** — API keys are passed through directly, never stored
+- **Docker-ready** — Single command deployment with Docker Compose
 
 ## Quick Start
 
+### Option 1: Direct Run
+
 ```bash
-# Install dependencies
+# Clone the repository
+git clone https://github.com/StanleyChanH/OpenRouterFree.git
+cd OpenRouterFree
+
+# Install dependencies (requires uv)
 uv sync
 
 # Start the server
 uv run uvicorn app.main:app
-
-# Or with custom port
-PORT=3000 uv run uvicorn app.main:app --port 3000
 ```
 
-## Docker
+### Option 2: Docker
 
 ```bash
+git clone https://github.com/StanleyChanH/OpenRouterFree.git
+cd OpenRouterFree
 docker compose up -d
 ```
 
-## Usage
+The server starts at `http://localhost:8000`.
 
-The API is OpenAI-compatible. Point any OpenAI client at `http://localhost:8000`.
+## Usage
 
 ### Chat Completions
 
@@ -38,14 +68,46 @@ curl http://localhost:8000/v1/chat/completions \
 ```
 
 **Model field options:**
-- `"auto"` or omitted — use the most popular free model (by weekly tokens)
-- `"free-random"` — randomly pick a free model
-- Specific model ID (e.g. `"deepseek/deepseek-v4-flash:free"`) — use that model
+
+| Value | Behavior |
+|-------|----------|
+| `"auto"` or omitted | Use the most popular free model (by weekly tokens) |
+| `"free-random"` | Randomly pick from available free models |
+| Specific model ID | Use that exact model (e.g., `deepseek/deepseek-v4-flash:free`) |
+
+### Streaming
+
+```bash
+curl http://localhost:8000/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_OPENROUTER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "auto",
+    "stream": true,
+    "messages": [{"role": "user", "content": "Tell me a story"}]
+  }'
+```
 
 ### List Free Models
 
 ```bash
 curl http://localhost:8000/v1/models | jq
+```
+
+Response:
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "deepseek/deepseek-v4-flash:free",
+      "object": "model",
+      "created": 1777000666,
+      "owned_by": "openrouter-free-proxy",
+      "context_length": 1048576
+    }
+  ]
+}
 ```
 
 ### Get Single Model
@@ -54,20 +116,101 @@ curl http://localhost:8000/v1/models | jq
 curl http://localhost:8000/v1/models/deepseek/deepseek-v4-flash:free | jq
 ```
 
+### Using with OpenAI SDK (Python)
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="http://localhost:8000/v1",
+    api_key="YOUR_OPENROUTER_KEY"  # NOT needed for /v1/models
+)
+
+# Auto-select the best free model
+response = client.chat.completions.create(
+    model="auto",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+print(response.choices[0].message.content)
+```
+
+### Using with Other Clients
+
+Works with any OpenAI-compatible client. Just set the base URL:
+
+| Client | Base URL |
+|--------|----------|
+| ChatGPT-Next-Web | `http://localhost:8000` |
+| LobeChat | `http://localhost:8000/v1` |
+| LibreChat | `http://localhost:8000/v1` |
+| Any OpenAI SDK | Set `base_url` to `http://localhost:8000/v1` |
+
 ## Configuration
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PORT` | `8000` | Server port |
-| `CACHE_TTL` | `600` | Model cache refresh interval (seconds) |
+| `PORT` | `8000` | Server listen port |
+| `CACHE_TTL` | `600` | Model cache refresh interval in seconds |
 | `OPENROUTER_BASE_URL` | `https://openrouter.ai/api/v1` | OpenRouter API base URL |
+
+Set via environment variables or `.env` file (see [.env.example](.env.example)).
+
+## API Reference
+
+### `POST /v1/chat/completions`
+
+OpenAI-compatible chat completions endpoint. Supports both streaming (`stream: true`) and non-streaming responses.
+
+### `GET /v1/models`
+
+Returns all currently available free models, sorted by weekly token usage (most popular first).
+
+### `GET /v1/models/{model_id}`
+
+Returns details for a specific free model.
+
+## Getting an OpenRouter API Key
+
+1. Sign up at [openrouter.ai](https://openrouter.ai)
+2. Go to [Keys](https://openrouter.ai/keys) and create a new key
+3. Free models don't consume credits, but an API key is still required
 
 ## Development
 
 ```bash
+# Install dev dependencies
+uv sync
+
 # Run tests
 uv run pytest -v
 
 # Run with auto-reload
 uv run uvicorn app.main:app --reload
+
+# Run integration tests (requires running server and OPENROUTER_API_KEY)
+OPENROUTER_API_KEY=your-key PYTHONUTF8=1 uv run python test_all.py
 ```
+
+## Project Structure
+
+```
+OpenRouterFree/
+├── app/
+│   ├── config.py         # Environment variable configuration
+│   ├── models.py         # Model cache, filtering, and sorting
+│   ├── proxy.py          # Request forwarding (streaming + non-streaming)
+│   └── main.py           # FastAPI app with route handlers
+├── tests/
+│   ├── conftest.py       # Shared test fixtures
+│   ├── test_models.py    # Model cache unit tests
+│   ├── test_proxy.py     # Proxy resolution tests
+│   └── test_api.py       # API route integration tests
+├── Dockerfile
+├── docker-compose.yml
+├── pyproject.toml
+└── test_all.py           # Full integration test script
+```
+
+## License
+
+[MIT](LICENSE) © StanleyChanH
