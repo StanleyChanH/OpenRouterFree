@@ -145,6 +145,102 @@ print(response.choices[0].message.content)
 | LibreChat | `http://localhost:8000/v1` |
 | 任意 OpenAI SDK | 设置 `base_url` 为 `http://localhost:8000/v1` |
 
+## 对接 Agent 框架
+
+### OpenClaw
+
+OpenClaw 支持自定义 OpenAI 兼容模型提供者。编辑 `config.yaml`：
+
+```yaml
+models:
+  providers:
+    openrouter-free:
+      baseUrl: http://localhost:8000/v1
+      apiKey: YOUR_OPENROUTER_KEY
+
+agents:
+  defaults:
+    model:
+      primary: openrouter-free/auto
+```
+
+或使用交互式配置：
+
+```bash
+openclaw onboard
+# 选择 "Custom Provider" → 设置 baseUrl 为 http://localhost:8000/v1
+```
+
+模型名设为 `openrouter-free/auto` 自动选择，或 `openrouter-free/deepseek/deepseek-v4-flash:free` 指定模型。
+
+### Hermes
+
+Hermes Agent 支持任意 OpenAI 兼容端点作为自定义提供者。在配置中添加：
+
+```yaml
+providers:
+  openrouter-free:
+    type: openai
+    base_url: http://localhost:8000/v1
+    api_key: YOUR_OPENROUTER_KEY
+
+default_provider: openrouter-free
+default_model: auto
+```
+
+Hermes 还可以暴露自身的 OpenAI 兼容 API Server，实现链式调用：`Hermes → OpenRouterFree → OpenRouter`。
+
+### Claude Code
+
+Claude Code 原生使用 Anthropic API 格式。要使用 OpenRouterFree，需要借助转换代理（如 [claude-code-proxy](https://github.com/fuergaosi233/claude-code-proxy)）：
+
+```bash
+# 1. 启动 OpenRouterFree
+uv run uvicorn app.main:app
+
+# 2. 启动转换代理（在 Anthropic 格式和 OpenAI 格式之间转换）
+npx claude-code-proxy --openai-base-url http://localhost:8000/v1 --openai-api-key YOUR_OPENROUTER_KEY
+
+# 3. 将 Claude Code 指向转换代理
+export ANTHROPIC_BASE_URL=http://localhost:8080
+claude
+```
+
+### Cline（VS Code 插件）
+
+1. 打开 VS Code 设置 → 搜索 `cline`
+2. 设置 **API Provider** 为 `OpenAI Compatible`
+3. 设置 **Base URL** 为 `http://localhost:8000/v1`
+4. 设置 **API Key** 为你的 OpenRouter Key
+5. 设置 **Model** 为 `auto`
+
+### Cursor
+
+1. 打开设置 → **Models**
+2. 添加 **OpenAI API Compatible** 模型
+3. 设置 **Base URL** 为 `http://localhost:8000/v1`
+4. 设置 **API Key** 为你的 OpenRouter Key
+5. 模型名设为 `auto` 或具体的免费模型 ID
+
+### Aider
+
+```bash
+pip install aider-chat
+aider --openai-api-base http://localhost:8000/v1 \
+      --openai-api-key YOUR_OPENROUTER_KEY \
+      --model openai/auto
+```
+
+### OpenHands
+
+设置环境变量：
+
+```bash
+export LLM_MODEL="auto"
+export LLM_API_KEY="YOUR_OPENROUTER_KEY"
+export LLM_BASE_URL="http://localhost:8000/v1"
+```
+
 ## 配置项
 
 | 变量 | 默认值 | 说明 |

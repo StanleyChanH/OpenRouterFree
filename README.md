@@ -145,6 +145,102 @@ Works with any OpenAI-compatible client. Just set the base URL:
 | LibreChat | `http://localhost:8000/v1` |
 | Any OpenAI SDK | Set `base_url` to `http://localhost:8000/v1` |
 
+## Integration with Agent Frameworks
+
+### OpenClaw
+
+OpenClaw supports custom OpenAI-compatible providers. Edit your `config.yaml`:
+
+```yaml
+models:
+  providers:
+    openrouter-free:
+      baseUrl: http://localhost:8000/v1
+      apiKey: YOUR_OPENROUTER_KEY
+
+agents:
+  defaults:
+    model:
+      primary: openrouter-free/auto
+```
+
+Or use the interactive setup:
+
+```bash
+openclaw onboard
+# Choose "Custom Provider" → set baseUrl to http://localhost:8000/v1
+```
+
+Set `model` to `openrouter-free/auto` for auto-selection, or `openrouter-free/deepseek/deepseek-v4-flash:free` for a specific model.
+
+### Hermes
+
+Hermes Agent supports any OpenAI-compatible endpoint as a custom provider. Configure in your settings:
+
+```yaml
+providers:
+  openrouter-free:
+    type: openai
+    base_url: http://localhost:8000/v1
+    api_key: YOUR_OPENROUTER_KEY
+
+default_provider: openrouter-free
+default_model: auto
+```
+
+Hermes also exposes its own OpenAI-compatible API Server, so you can chain: `Hermes → OpenRouterFree → OpenRouter`.
+
+### Claude Code
+
+Claude Code uses the Anthropic API format natively. To use OpenRouterFree, you need a translation proxy (e.g., [claude-code-proxy](https://github.com/fuergaosi233/claude-code-proxy)):
+
+```bash
+# 1. Start OpenRouterFree
+uv run uvicorn app.main:app
+
+# 2. Start a translation proxy (converts Anthropic ↔ OpenAI format)
+npx claude-code-proxy --openai-base-url http://localhost:8000/v1 --openai-api-key YOUR_OPENROUTER_KEY
+
+# 3. Point Claude Code at the translation proxy
+export ANTHROPIC_BASE_URL=http://localhost:8080
+claude
+```
+
+### Cline (VS Code)
+
+1. Open VS Code Settings → search for `cline`
+2. Set **API Provider** to `OpenAI Compatible`
+3. Set **Base URL** to `http://localhost:8000/v1`
+4. Set **API Key** to your OpenRouter key
+5. Set **Model** to `auto`
+
+### Cursor
+
+1. Open Settings → **Models**
+2. Add an **OpenAI API Compatible** model
+3. Set **Base URL** to `http://localhost:8000/v1`
+4. Set **API Key** to your OpenRouter key
+5. Set model name to `auto` or a specific free model ID
+
+### Aider
+
+```bash
+pip install aider-chat
+aider --openai-api-base http://localhost:8000/v1 \
+      --openai-api-key YOUR_OPENROUTER_KEY \
+      --model openai/auto
+```
+
+### OpenHands
+
+Set environment variables:
+
+```bash
+export LLM_MODEL="auto"
+export LLM_API_KEY="YOUR_OPENROUTER_KEY"
+export LLM_BASE_URL="http://localhost:8000/v1"
+```
+
 ## Configuration
 
 | Variable | Default | Description |
